@@ -16,6 +16,13 @@
 #define DT 4
 #define CLK 2
 
+//Miscellaneous
+#define MAX_N 4194967290
+
+unsigned long get_time(){
+    return (millis() % MAX_N);
+}
+
 //=====================
 
 class Encoder{
@@ -29,7 +36,7 @@ private:
     unsigned long debounce = 50, time_now,last_check=0;
 
     void handleRotation(){
-        time_now = millis() % 100000000000;
+        time_now = get_time();
 
         //debounce
         if(time_now-last_check <= debounce)
@@ -97,19 +104,27 @@ public:
     Screen(){}
 
     void init(){
-        display.begin(I2C_ADDRESS, true);
+        Serial.println("Initializing display...\n");
 
+        if (!display.begin(I2C_ADDRESS)) {
+            Serial.println("Failed to initialize display :(");
+            while (1);
+        }
+
+        Serial.println("Display initialized successfully!");
         display.clearDisplay();
+        display.setCursor(0, 0);
         display.setTextSize(1);
         display.setTextColor(SH110X_WHITE);
-        display.setCursor(0, 0);
+        display.println("Ready");
         display.display();
 
-        Serial.println("Display ready!\n");
+        
+        delay(500);
     }
 
 
-    void printTune(int seconds){
+    void printClock(int seconds, String message){
         //Calculate
         int m = seconds/60;
         int s = seconds - m*60;
@@ -118,34 +133,7 @@ public:
         display.setTextSize(1);
         display.setCursor(20, 6);
 
-        display.println("AJUSTAR TIEMPO\n");
-        display.setCursor(centerX, centerY);
-        display.setTextSize(2);
-
-        //Format
-        if(m < 10)
-            display.print("0");
-        display.print(m);
-
-        display.print(":");
-        
-        if(s < 10)
-            display.print("0");
-        display.println(s);
-    }
-
-
-    void printClock(int seconds){
-        //Calculate
-        int m = seconds/60;
-        int s = seconds - m*60;
-
-        //Status message
-        display.clearDisplay();
-        display.setTextSize(1);
-        display.setCursor(32, 6);
-
-        display.println("FOCUS TIME!");
+        display.println(message);
         display.setCursor(centerX, centerY);
         display.setTextSize(2);
 
@@ -167,13 +155,13 @@ public:
         display.invertDisplay(false);
         display.setTextSize(text_size);
 
-        display.setCursor(46, 26);
+        display.setCursor(centerX, centerY);
         display.print(message);
     }
 
 
     void showFace(int idx){
-        idx = constrain(idx, 0, CANT_CARAS-1);
+        idx = constrain(idx, 0, N_FACES-1);
         display.clearDisplay();
         display.drawBitmap(0, 0, Caras[idx], 128, 64, SH110X_WHITE);
     }
@@ -266,7 +254,7 @@ private:
     bool pressed = false;
 
     void update(){
-        time_now = millis() % 10000000000;
+        time_now = get_time();
         current_state = digitalRead(pin);
 
         //Debounce delay has not passed

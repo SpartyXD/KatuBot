@@ -143,7 +143,7 @@ const unsigned char* Caras[] = {
 	IDLE_FACE, HAPPY_FACE
 };
 
-const int CANT_CARAS = sizeof(Caras)/sizeof(Caras[0]);
+const int N_FACES = sizeof(Caras)/sizeof(Caras[0]);
 
 
 #endif
