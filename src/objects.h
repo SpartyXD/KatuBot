@@ -37,9 +37,18 @@ public:
         display.clearDisplay();
 
         display.setTextSize(1);
-        display.invertDisplay(true);
         display.setTextColor(SH110X_WHITE);
         display.setCursor(0, 0);
+        delay(500);
+    }
+
+
+    void printCentered(String message){
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setCursor(centerX, centerY);
+
+        display.println(message);
     }
 
 

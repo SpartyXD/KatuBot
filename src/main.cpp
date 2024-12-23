@@ -28,7 +28,7 @@ unsigned long time_now = 0;
 
 int seconds_remaining = 0;
 int MAX_SECONDS = 7200;
-int STEP = 60;
+int STEP = 300;
 
 //Time is up
 unsigned long BEEP_DELAY = 800;
@@ -69,8 +69,18 @@ void setup(){
   //Init all
   Serial.begin(9600);
   screen.init();
+
+  screen.printCentered("Loading...");
+  screen.show();
+  delay(1200);
+  
   btn.init();
   speaker.init();
+
+  screen.printCentered("KATUBOT :D");
+  screen.show();
+  delay(1200);
+  wakeUpBeep();
 
   //Encoder
   attachInterrupt(digitalPinToInterrupt(clkPin), encoderISR, CHANGE);
@@ -232,8 +242,12 @@ void encoderISR(){
   bool dtState = digitalRead(dtPin);
   bool clkState = digitalRead(clkPin);
 
-  encoderDirection = (clkState != dtState);
-  encoderTurned = true;
+  if(clkState != lastStateCLK){
+    encoderTurned = true;
+    encoderDirection = (clkState != dtState);
+  }
+
+  lastStateCLK = clkState;
 }
 
 
