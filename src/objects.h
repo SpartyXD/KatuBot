@@ -11,87 +11,15 @@
 
 //=====================
 //Pines
-#define BUZZER 9
-#define SW 3
-#define DT 4
-#define CLK 2
-
-//Miscellaneous
-#define MAX_N 4194967290
-
-unsigned long get_time(){
-    return (millis() % MAX_N);
-}
+const int buzzer = 9;
+const int sw_pin = 3;
 
 //=====================
 
-class Encoder{
-private:
-    int dtPin, clkPin;
-    volatile int last_s, current_s;
-    volatile bool clockwise = false;
-    volatile bool is_turned = false;
-    static Encoder* instance;
-
-    unsigned long debounce = 50, time_now,last_check=0;
-
-    void handleRotation(){
-        time_now = get_time();
-
-        //debounce
-        if(time_now-last_check <= debounce)
-            return;
-
-        current_s = (digitalRead(clkPin) << 1 | digitalRead(dtPin));
-
-        if(current_s != last_s){
-            is_turned = true;
-            clockwise = !(last_s == 0b00 || last_s == 0b11);
-        }
-        else
-            is_turned = false;
-        
-        last_s = current_s;
-    }
-
-    static void handler(){
-        if(instance != nullptr)
-            instance->handleRotation();
-    }
-
-public:
-    Encoder(){}
-
-    void init(int clk, int dt){
-        clkPin = clk, dtPin=dt;
-        instance = this;
-
-        attachInterrupt(digitalPinToInterrupt(clkPin), handler, CHANGE);
-        pinMode(dt, INPUT);
-        Serial.println("Encoder ready!\n");
-    }
-
-    int getState(){
-        if(!is_turned)
-            return 0;
-        
-        is_turned = false;
-        Serial.println("ROTATED!: " + String(clockwise) + "\n");
-        return (clockwise ? 1 : -1);
-    }
-};
-
-Encoder* Encoder::instance = nullptr;
-
-
-//===============================================================
-
-#define I2C_ADDRESS 0x3c 
-#define SCREEN_WIDTH 128 
-#define SCREEN_HEIGHT 64 
-#define OLED_RESET -1   
-
-Adafruit_SH1106G display = Adafruit_SH1106G(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+#define SCREEN_ADRESS 0x3C
+Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 
 class Screen{
@@ -104,27 +32,18 @@ public:
     Screen(){}
 
     void init(){
-        Serial.println("Initializing display...\n");
-
-        if (!display.begin(I2C_ADDRESS)) {
-            Serial.println("Failed to initialize display :(");
-            while (1);
-        }
-
-        Serial.println("Display initialized successfully!");
+        display.begin(0x3C, true);
+        delay(2000);
         display.clearDisplay();
-        display.setCursor(0, 0);
-        display.setTextSize(1);
-        display.setTextColor(SH110X_WHITE);
-        display.println("Ready");
-        display.display();
 
-        
-        delay(500);
+        display.setTextSize(1);
+        display.invertDisplay(true);
+        display.setTextColor(SH110X_WHITE);
+        display.setCursor(0, 0);
     }
 
 
-    void printClock(int seconds, String message){
+    void printTune(int seconds){
         //Calculate
         int m = seconds/60;
         int s = seconds - m*60;
@@ -133,7 +52,7 @@ public:
         display.setTextSize(1);
         display.setCursor(20, 6);
 
-        display.println(message);
+        display.println("AJUSTAR TIEMPO\n");
         display.setCursor(centerX, centerY);
         display.setTextSize(2);
 
@@ -150,13 +69,30 @@ public:
     }
 
 
-    void printCentered(String message, int text_size=1){
-        display.clearDisplay();
-        display.invertDisplay(false);
-        display.setTextSize(text_size);
+    void printClock(int seconds){
+        //Calculate
+        int m = seconds/60;
+        int s = seconds - m*60;
 
+        //Status message
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setCursor(32, 6);
+
+        display.println("FOCUS TIME!");
         display.setCursor(centerX, centerY);
-        display.print(message);
+        display.setTextSize(2);
+
+        //Format
+        if(m < 10)
+            display.print("0");
+        display.print(m);
+
+        display.print(":");
+        
+        if(s < 10)
+            display.print("0");
+        display.println(s);
     }
 
 
@@ -180,60 +116,24 @@ public:
 };
 
 
-//===============================================================
+//============
+
 
 
 class Speaker{
-private:
-    int pin;
 public:
     Speaker(){}
 
-    void init(int p){
-        pin = p;
-        pinMode(pin, OUTPUT);  
-        Serial.println("Speaker ready!\n");  
+    void init(){
+        pinMode(buzzer, OUTPUT);    
     }
 
     void makeSound(double frec, int dur){
-        tone(pin, frec);
+        tone(buzzer, frec);
         delay(dur);
-        noTone(pin);
+        noTone(buzzer);
     }
 
-    void wakeUpBeep(){
-        makeSound(700, 100);
-        delay(50);
-        makeSound(1000, 100);
-        delay(50);
-        makeSound(1300, 100);
-        delay(150);
-        makeSound(1000, 150);
-    }
-
-    void notificationBeep(){
-        makeSound(1000, 200);
-        delay(100);
-        makeSound(800, 300);
-    }
-
-    void actionBeep(){
-        makeSound(1000, 200);
-    }
-
-    void successBeep(){
-        makeSound(700, 100);
-        delay(50);
-        makeSound(1000, 100);
-        delay(50);
-        makeSound(1300, 100);
-    }
-
-    void timerBeep(){
-        makeSound(1000, 200);
-        delay(100);
-        makeSound(800, 300);
-    }
 };
 
 
@@ -245,8 +145,6 @@ private:
     unsigned long last_check;
     unsigned long time_now;
 
-    int pin;
-
     bool last_state;
     bool current_state;
     unsigned long debounceDelay = 200;
@@ -254,8 +152,8 @@ private:
     bool pressed = false;
 
     void update(){
-        time_now = get_time();
-        current_state = digitalRead(pin);
+        time_now = millis();
+        current_state = digitalRead(sw_pin);
 
         //Debounce delay has not passed
         if(time_now-last_check > debounceDelay){
@@ -274,10 +172,8 @@ private:
 public:
     SwitchButton(){}
 
-    void init(int p){
-        pin = p;
-        pinMode(pin, INPUT_PULLUP);
-        Serial.println("Button ready!\n");
+    void init(){
+        pinMode(sw_pin, INPUT_PULLUP);
     }
 
 
@@ -285,6 +181,8 @@ public:
         update();
         return pressed;
     }
+
+
 
 };
 
