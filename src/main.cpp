@@ -28,7 +28,7 @@ unsigned long time_now = 0;
 
 int seconds_remaining = 0;
 int MAX_SECONDS = 7200;
-int STEP = 300;
+int STEP = 10;
 
 //Time is up
 unsigned long BEEP_DELAY = 800;
@@ -73,14 +73,15 @@ void setup(){
   screen.printCentered("Loading...");
   screen.show();
   delay(1200);
-  
+
   btn.init();
   speaker.init();
 
   screen.printCentered("KATUBOT :D");
   screen.show();
-  delay(1200);
   wakeUpBeep();
+  delay(500);
+  
 
   //Encoder
   attachInterrupt(digitalPinToInterrupt(clkPin), encoderISR, CHANGE);
@@ -90,7 +91,7 @@ void setup(){
 
 void loop(){
   //Message changes every 2 minutes
-  time_now = millis();
+  time_now = get_time();
   if(time_now-last_message > random_delay){
     last_message = time_now;
     change_random_things();
@@ -154,7 +155,7 @@ void tuning_menu(){
 
 
   //Print current clock
-  screen.printTune(seconds_remaining);
+  screen.printClock(seconds_remaining, "Adjust time");
   screen.show();
 }
 
@@ -169,7 +170,7 @@ void clock_running(){
 
 
   //Update time
-  time_now = millis();
+  time_now = get_time();
   if(time_now-last_seconds_change >= 1000){
     seconds_remaining = constrain(seconds_remaining-1, 0, MAX_SECONDS);
     last_seconds_change = time_now;
@@ -177,7 +178,7 @@ void clock_running(){
 
 
   //Show clock
-  screen.printClock(seconds_remaining);
+  screen.printClock(seconds_remaining, "Focus time!");
   screen.show();
 
 
@@ -208,7 +209,7 @@ void change_random_things(){
 
 
 void time_is_up(){
-  time_now = millis();
+  time_now = get_time();
 
   //Beep
   if(time_now-last_beep > BEEP_DELAY){
@@ -225,7 +226,7 @@ void time_is_up(){
   if(screen_on)
     screen.clear();
   else
-    screen.printClock(0);
+    screen.printClock(0, "Time is up!");
   
   screen_on = !screen_on;
   screen.show();

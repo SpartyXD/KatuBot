@@ -16,6 +16,15 @@ const int sw_pin = 3;
 
 //=====================
 
+//Aux
+#define MAX_TIME 4194967295
+
+unsigned long get_time(){
+    return millis() % MAX_TIME;
+}
+
+//====================
+
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 #define SCREEN_ADRESS 0x3C
@@ -52,33 +61,7 @@ public:
     }
 
 
-    void printTune(int seconds){
-        //Calculate
-        int m = seconds/60;
-        int s = seconds - m*60;
-
-        display.clearDisplay();
-        display.setTextSize(1);
-        display.setCursor(20, 6);
-
-        display.println("AJUSTAR TIEMPO\n");
-        display.setCursor(centerX, centerY);
-        display.setTextSize(2);
-
-        //Format
-        if(m < 10)
-            display.print("0");
-        display.print(m);
-
-        display.print(":");
-        
-        if(s < 10)
-            display.print("0");
-        display.println(s);
-    }
-
-
-    void printClock(int seconds){
+    void printClock(int seconds, String message="Focus time!"){
         //Calculate
         int m = seconds/60;
         int s = seconds - m*60;
@@ -88,7 +71,7 @@ public:
         display.setTextSize(1);
         display.setCursor(32, 6);
 
-        display.println("FOCUS TIME!");
+        display.println(message);
         display.setCursor(centerX, centerY);
         display.setTextSize(2);
 
@@ -161,7 +144,7 @@ private:
     bool pressed = false;
 
     void update(){
-        time_now = millis();
+        time_now = get_time();
         current_state = digitalRead(sw_pin);
 
         //Debounce delay has not passed
@@ -190,8 +173,6 @@ public:
         update();
         return pressed;
     }
-
-
 
 };
 
