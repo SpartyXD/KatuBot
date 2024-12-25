@@ -28,7 +28,7 @@ unsigned long time_now = 0;
 
 int seconds_remaining = 0;
 int MAX_SECONDS = 7200;
-int STEP = 10;
+int STEP = 300;
 
 //Time is up
 unsigned long BEEP_DELAY = 800;
